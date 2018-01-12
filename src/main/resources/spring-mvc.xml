@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/mvc
+                           http://www.springframework.org/schema/mvc/spring-mvc.xsd
+                           http://www.springframework.org/schema/aop
+                           http://www.springframework.org/schema/aop/spring-aop-4.2.xsd
+                           http://www.springframework.org/schema/context
+                           http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <!-- 激活aop自动代理功能 -->
+    <!--<aop:aspectj-autoproxy expose-proxy="true"></aop:aspectj-autoproxy>-->
+
+    <!--<mvc:default-servlet-handler/>-->
+    <!--启动自动扫描-->
+    <context:component-scan base-package="com.test">
+        <context:exclude-filter type="regex" expression=".controller.*" />
+    </context:component-scan>
+    <!--<bean id="User" class="com.test.entity.User"/>-->
+
+    <!-- 启动SpringMVC的注解功能，它会自动注册HandlerMapping、HandlerAdapter、ExceptionResolver的相关-->
+    <mvc:annotation-driven />
+    <mvc:default-servlet-handler />
+
+    <!-- 修改为html返回视图，同时在web.xml配置 -->
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver" >
+        <property name="prefix" value="/WEB-INF/view/" />
+        <property name="suffix" value=".html" />
+    </bean>
+    <!--拦截器-->
+    <mvc:interceptors>
+        <!-- 多个拦截器，顺序执行 -->
+        <mvc:interceptor>
+            <mvc:mapping path="/home/**"/>
+            <bean id="LoginInterceptor" class="com.test.interceptor.LoginInterceptor"></bean>
+        </mvc:interceptor>
+
+        <mvc:interceptor>
+            <mvc:mapping path="/home/admin"/>
+            <bean id="AdminInterceptor" class="com.test.interceptor.AdminInterceptor"></bean>
+        </mvc:interceptor>
+
+        <mvc:interceptor>
+            <mvc:mapping path="/login"/>
+            <mvc:mapping path="/register"/>
+            <mvc:mapping path="/post/*.do"/>
+            <bean id="LogoutInterceptor" class="com.test.interceptor.LogoutInterceptor"></bean>
+        </mvc:interceptor>
+
+    </mvc:interceptors>
+</beans>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mongo="http://www.springframework.org/schema/data/mongo"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/data/mongo
+                           http://www.springframework.org/schema/data/mongo/spring-mongo-1.0.xsd
+                           http://www.springframework.org/schema/context
+                           http://www.springframework.org/schema/context/spring-context.xsd">
+    <!-- mongodb 的基本配置 -->
+    <mongo:mongo id="mongo"  host="${mongodb.host}" port="${mongodb.port}"  />
+    <!-- 权限配置 -->
+    <bean id="userCredentials" class="org.springframework.data.authentication.UserCredentials">
+        <constructor-arg name="username"  value="${mongodb.username}"/>
+        <constructor-arg name="password"  value="${mongodb.password}"/>
+    </bean>
+
+    <!-- template 配置 -->
+    <bean id="mongoTemplate" class="org.springframework.data.mongodb.core.MongoTemplate">
+        <constructor-arg ref="mongo" />
+        <!-- 数据库名称 -->
+        <constructor-arg value="admin" />
+        <!-- 权限  -->
+        <constructor-arg ref="userCredentials" />
+    </bean>
+</beans>

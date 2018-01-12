@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.test.dao.CustomerDao">
+
+    <!--获得所有客户-->
+    <select id="getAllCustomer" resultType="Customer">
+        SELECT * FROM customer;
+    </select>
+
+    <!--添加客户-->
+    <insert id="insertCustomer" parameterType="Customer" useGeneratedKeys="true">
+        INSERT INTO customer(name,profession,province,uptime,funds,corporation)
+        VALUES(#{name},#{profession},#{province},#{uptime},#{funds},#{corporation})
+        <selectKey resultType="int" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID() AS customerId
+        </selectKey>
+    </insert>
+
+
+    <!--更新客户-->
+    <update id="updateCustomer" parameterType="Customer" >
+        update customer set
+        name=#{name},profession=#{profession},province=#{province},uptime=#{uptime},funds=#{funds},corporation=#{corporation}
+        where id=#{id}
+    </update>
+
+    <!--删除客户-->
+    <delete id="deleteCustomerById" parameterType="int" >
+        DELETE FROM customer WHERE id=#{id};
+    </delete>
+    <delete id="deleteCustomerByName" parameterType="String">
+        DELETE FROM customer WHERE name=#{name}
+    </delete>
+
+    <!--查询客户-->
+    <select id="findCustomerById" parameterType="int" resultType="com.test.entity.Customer">
+        SELECT * FROM customer WHERE id = #{id}
+    </select>
+
+    <select id="findCustomerByName" parameterType="String" resultType="com.test.entity.Customer">
+        SELECT * FROM customer WHERE name LIKE CONCAT('%',#{name},'%')
+    </select>
+
+    <select id="findCustomerByProfession" parameterType="String" resultType="com.test.entity.Customer">
+        SELECT * FROM customer WHERE profession = #{profession}
+    </select>
+
+    <select id="findCustomerByProvince" parameterType="String" resultType="com.test.entity.Customer">
+        SELECT * FROM customer WHERE province = #{privince}
+    </select>
+
+    <select id="findCustomerByUptime" parameterType="Date" resultType="com.test.entity.Customer">
+        SELECT * FROM customer WHERE uptime = #{uptime}
+    </select>
+
+    <select id="findCustomerByFunds" parameterType="long" resultType="com.test.entity.Customer">
+        SELECT * FROM customer WHERE funds = #{funds}
+    </select>
+
+    <select id="findCustomerByCorporation" parameterType="String" resultType="com.test.entity.Customer">
+        SELECT * FROM customer WHERE corporation = #{corporation}
+    </select>
+
+</mapper>

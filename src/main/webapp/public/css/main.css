@@ -1,0 +1,8 @@
+#content{
+	width: 100%;
+	height: 300px;
+	overflow-y: scroll;
+	padding: 20px;
+	border: 1px solid;
+	word-break: break-all;
+}

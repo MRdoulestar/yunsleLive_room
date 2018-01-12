@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.test.dao.UserDao">
+
+    <!--用户登录-->
+    <select id="findByName" parameterType="String" resultType="com.test.entity.User">
+        SELECT * FROM user WHERE name = #{name}
+    </select>
+
+    <!--用户注册-->
+    <insert id="addUser" parameterType="User" useGeneratedKeys="true">
+        INSERT INTO user(name,password) VALUES(#{name},#{password})
+    </insert>
+</mapper>

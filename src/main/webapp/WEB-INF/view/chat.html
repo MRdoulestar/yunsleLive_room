@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+	<meta charset="UTF-8">
+	<title>Yunsle直播间</title>
+	<link rel="stylesheet" href="../../public/css/bootstrap.min.css">
+	<link rel="stylesheet" href="../../public/css/main.css">
+	<link rel="stylesheet" href="../../public/css/style.css">
+    <link rel="stylesheet" href="../../public/css/animate.css">
+    <link rel="stylesheet" href="../../public/css/sweetalert2.min.css">
+	<link rel="stylesheet" type="text/css" href="../../public/css/overhang.min.css" />
+	<!--<script src="../../public/js/socket.io.js"></script>-->
+	<script src="../../public/js/stomp.js"></script>
+	<script src="../../public/js/angular.min.js"></script>
+	<script src="../../public/js/jquery.min.js"></script>
+	<script src="../../public/js/jquery.cookie.min.js"></script>
+	<script src="../../public/js/bootstrap.min.js"></script>
+    <script src="../../public/js/sweetalert2.min.js"></script>
+	<script type="text/javascript" src="http://cdn.bootcss.com/jqueryui/1.12.0/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="../../public/js/overhang.min.js"></script>
+</head>
+<body ng-app="mychat"  ng-controller='messageBox'>
+	<div class="container fh5co-form animate-box fadeIn animated-fast">
+    <!--<div class="container fh5co-form">-->
+		<h1 class="page-header text-center">Yunsle直播间
+		<button ng-click="zhubo($event)" class="btn btn-success">我是主播</button>
+		<button  ng-click="close($event)" class="btn btn-danger">退出</button>
+		<!--<a  href="/home/webrtc" target="_blank" class="btn btn-warning">视频聊天</a>-->
+		</h1>
+
+		<div class="row">
+			<div class="col-md-offset-2 col-md-6">
+				<div id="dm_box" class="dm_box">
+					<video id="video" style="width: 100%;display: none" autoplay muted></video>
+					<canvas id="zhubocanvas" style="width: 100%;display: none"></canvas>
+					<img id="clientcanvas" style="width:100%; height: 100%" src="../../public/images/chat/default.jpg" alt="">
+					<!--弹幕功能-->
+					<div class="input-group">
+						<input id="dm" class="form-control" type="text" ng-model="input_dm">
+						<span class="input-group-btn">
+							<button id="submit_dm" ng-click="send_dm($event)" class="btn btn-warning">发送弹幕</button>
+						</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="col-md-3">
+				<p class="text-center">欢迎你，请尽情灌水~\(≧▽≦)/~</p>
+				<!--<p class="text-center" ng-bind="num"></p>-->
+				<div id="content">
+				</div>
+				<!--聊天功能-->
+				<span>还可输入:{{ length() }}字</span>
+				<div class="input-group">
+					<input id="msg" class="form-control" type="text" ng-model="input">
+					<span class="input-group-btn">
+						<button id="submit" ng-click="send($event)" class="btn btn-primary">发送</button>
+					</span>
+				</div>
+			</div>
+			<hr>
+		</div>
+
+	</div>
+
+</body>
+<script>
+	var myApp = angular.module("mychat",[]);
+	//AngularJS控制器
+	myApp.controller('messageBox',function ($scope) {
+		// 显示剩余字数
+		$scope.tot = 100;
+		$scope.input = "";
+		$scope.input_dm = "";
+//		$scope.num=0;
+		$scope.length = function(){
+			$scope.r = $scope.tot - $scope.input.length;
+			if($scope.r >= 0){return $scope.r}else{$scope.r=-1;return 0}
+		};
+
+        var client = Stomp.client( "ws://192.168.43.89:61614/stomp", "v11.stomp" );
+        var videoclient = Stomp.client( "ws://192.168.43.89:61614/stomp", "v11.stomp" );
+//        var client = new Stomp.client( '127.0.0.1',61613, 'admin', 'admin' );
+
+        //加上/topic前缀才指定使用发布/订阅者模式，否则是p2p队列模式
+        var destination = "/topic/yunsle.topic";
+        var admindestination = "/topic/yunsle.admin";
+        var dmdestination = "/topic/yunsle.danmu";
+        var videodestination = "/topic/yunsle.video";
+		//接收聊天信息、弹幕信息和公告信息
+        client.connect("admin","admin",
+            function(sessionId) {
+                //订阅公告信息
+                client.subscribe(admindestination,
+                    function( message ) {
+                        //顶部通告栏显示
+                        $('body').overhang({
+							message: "管理员大人发话啦：" + message.body,
+                            duration: 5,
+							speed: 1000,
+//                            closeConfirm: true
+                        });
+                    }
+//                    { priority: 9 }
+                );
+            	//订阅聊天信息
+                client.subscribe(destination,
+                    function( message ) {
+                        // 添加一条消息记录
+                        $('#content').append("<p>"+message.body+"</p>");
+                        // 滚动条自动滚动
+                        $('#content').scrollTop($('#content').scrollTop()+50);
+                        // 启用按钮
+                        $("#submit").attr({"disabled":false});
+                    }
+//                    { priority: 9 }
+                );
+                //订阅弹幕信息
+                client.subscribe(dmdestination,
+                    function( message ) {
+                        //前端弹幕显示
+                        var span = document.createElement('span');
+//                        var top = parseInt(Math.random() * 400) - 20;
+                        var top = parseInt(Math.random() * 80);
+                        var color1 = parseInt(Math.random() * 256);
+                        var color2 = parseInt(Math.random() * 256);
+                        var color3 = parseInt(Math.random() * 256);
+                        var color = "rgb(" + color1 + "," + color2 + "," + color3 + ")";
+                        top = top < 0 ? 0 : top;
+                        span.className = 'dm_content';
+                        span.style.fontSize = '22px';
+                        span.style.position = 'absolute';
+//                        span.style.top = top + "px";
+                        span.style.top = top + "%";
+                        span.style.color = color;
+                        span.style.left = '450px';
+                        span.style.whiteSpace = 'nowrap';
+                        span.innerHTML = message.body;
+                        document.getElementById("dm_box").appendChild(span);
+                        $(".dm_content").animate({left:0},6000,function(){
+                            $(this).remove();
+                        });
+                    }
+//                    { priority: 9 }
+				);
+            }
+        );
+
+		//接受视频图片流
+        var clientcanvas = $("#clientcanvas");
+        videoclient.connect("admin","admin",
+            function(sessionId) {
+                videoclient.subscribe(videodestination,
+                    function( message ) {
+                        clientcanvas.attr("src",message.body);
+                    },
+                    { priority: 9 }
+                );
+            }
+        );
+
+	   	// 发送消息事件
+		$scope.send = ($event) => {
+			if($scope.r == -1 || $scope.input == ""){
+				sweetAlert("", "输入不能为空或字数过多！", "error");
+			}else{
+				console.log('发送的内容:'+$scope.input);
+//                client.send(destination, { priority: 9 }, $scope.input);
+                //通过post请求，通过java后端应用过滤言辞
+                $.post("mq/topicSender",{message:$scope.input},function(result){
+                    if(result == "danger") {
+                        sweetAlert("", "检测到敏感词，将被记录！", "error");
+                    }
+                });
+				// 清空输入框
+				$scope.input = "";
+			}
+		}
+
+		//发送弹幕事件
+		$scope.send_dm = ($event) => {
+            if($scope.input_dm == ""){
+                sweetAlert("", "输入不能为空或字数过多！", "error");
+            }else{
+                //通过post请求，通过java后端应用过滤言辞
+                $.post("mq/dmSender",{message:$scope.input_dm},function(result){
+                    if(result == "danger") {
+						sweetAlert("", "检测到敏感词，将被记录！", "error");
+					}
+				});
+                // 清空输入框
+                $scope.input_dm = "";
+            }
+		}
+//        // 在线人数
+//        socket.on('onlinenum',function(data){
+//            console.warn(data+'人在线');
+//            console.log($scope.num);
+//            $scope.num = data;
+//            $scope.$apply()
+//        });
+        //点击我是主播，获取视频，推送流
+		$scope.zhubo = ($event) => {
+                var video = document.getElementById("video");
+                    navigator.getUserMedia = navigator.getUserMedia ||
+                    navigator.webkitGetUserMedia ||
+                    navigator.mozGetUserMedia ||
+                    navigator.msGetUserMedia ||
+                    navigator.mediaDevices;//获取媒体对象（这里指摄像头）
+                navigator.getUserMedia({
+    //                "audio": true,
+                    "video": true
+                }, function(stream){
+                    //向PeerConnection中加入需要发送的流
+                    video.srcObject = stream;
+                }, function(error){
+                    //处理媒体流创建失败错误
+                    console.log('getUserMedia error: ' + error);
+                });
+                //显示本地视频，不显示被推送视频
+                $("#video").css("display","block");
+                $("#clientcanvas").css("display","none");
+                //不停绘制
+                interval = window.setInterval(function() {
+                    sendImage();
+                }, 10);
+
+            }
+            //绘制canvas并且生成图片base64发送
+            sendImage = ($event) => {
+                var canvas = document.getElementById("zhubocanvas");
+                var quality = 0.4;	//传输图像质量
+                canvas.width = video.videoWidth * 0.7;
+                canvas.height = video.videoHeight * 0.7;
+                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                //获取base64编码
+                var dataURL = canvas.toDataURL("image/jpeg",quality);
+                //发送到activeMQ
+                client.send(videodestination, { priority: 9 }, dataURL);
+            }
+
+			//关闭链接
+			$scope.close = ($event) => {
+				videoclient.disconnect();
+				client.disconnect();
+				window.location.href = "logout";
+			}
+
+        });
+</script>
+</html>

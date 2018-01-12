@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.test.dao.LinkmanDao">
+
+    <!--添加联系人-->
+    <insert id="insertLinkman" parameterType="Linkman" useGeneratedKeys="true">
+        INSERT INTO linkman(name,sex,tel,partment,place,birthday,hobby,cid)
+        VALUES(#{name},#{sex},#{tel},#{partment},#{place},#{birthday},#{hobby},#{cid})
+        <selectKey resultType="int" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID() AS linkmanId
+        </selectKey>
+    </insert>
+
+
+    <!--更新联系人-->
+    <update id="updateLinkman" parameterType="Linkman">
+        update linkman set
+        name=#{name},sex=#{sex},tel=#{tel},partment=#{partment},place=#{place},birthday=#{birthday},hobby=#{hobby}
+        where id=#{id}
+    </update>
+
+    <!--删除联系人-->
+    <delete id="deleteLinkman" parameterType="int">
+        DELETE FROM linkman WHERE id=#{id};
+    </delete>
+
+    <delete id="deleteLinkmanByCid" parameterType="int">
+        DELETE FROM linkman WHERE customer_id=#{id};
+    </delete>
+
+
+    <!--查询联系人-->
+    <select id="findLinkmanByName" parameterType="String" resultType="com.test.entity.Linkman">
+        SELECT * FROM linkman WHERE name = #{name}
+    </select>
+
+    <select id="findLinkmanByCid" parameterType="int" resultType="com.test.entity.Linkman">
+        SELECT * FROM linkman WHERE cid = #{cid}
+    </select>
+
+</mapper>
